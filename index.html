@@ -112,6 +112,46 @@
   .seg button { flex: 1; min-height: 40px; font-size: 14px; }
   .seg button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+  /* Set logging */
+  .hint:empty { display: none; }
+  .stepper { display: flex; }
+  .stepper button { flex: 0 0 48px; padding: 0; font-size: 22px; }
+  .stepper button:first-child { border-radius: 12px 0 0 12px; }
+  .stepper button:last-child { border-radius: 0 12px 12px 0; }
+  .stepper input { min-width: 0; padding: 0 4px; border-radius: 0; border-left: 0; border-right: 0; text-align: center; font-weight: 600; -moz-appearance: textfield; appearance: textfield; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .ex-group + .ex-group { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--border); }
+  .ex-head { display: flex; align-items: center; gap: 8px; }
+  .ex-head .ex-name { flex: 1; padding: 0; text-align: left; font-weight: 600; background: none; border: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link { background: none; border: 0; color: var(--accent); padding: 0 4px; font-size: 14px; }
+  .ex-group ul.list li { padding: 0; }
+  .setno { width: 24px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  /* Exercise library */
+  body.no-date .datebar { display: none; }
+  body.no-date main { padding-top: 12px; }
+  .seg.tall button { min-height: 48px; font-size: 16px; }
+  #exSearch { margin-bottom: 8px; }
+  .row-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%; min-height: 60px;
+    padding: 6px 0; text-align: left; background: none; border: 0; border-radius: 0;
+  }
+  .row-btn .chev { color: var(--muted); font-size: 22px; }
+  ul.list li:has(.row-btn) { padding: 0; }
+  .detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .detail-head button:first-child { flex: 0 0 48px; padding: 0; font-size: 22px; }
+  .detail-head h1 { flex: 1; min-width: 0; margin: 0; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nudge {
+    margin-bottom: 12px; padding: 12px 16px; border-radius: var(--radius);
+    background: rgba(57, 135, 229, .12); border: 1px solid rgba(57, 135, 229, .4);
+  }
+  .nudge b { color: var(--accent); }
+  .strength-chart { position: relative; height: 220px; }
+  .session { align-items: flex-start !important; }
+  .session .when { flex: 0 0 76px; }
+  .session .when div:first-child { font-weight: 600; }
+  .session .sets { flex: 1; line-height: 1.6; font-variant-numeric: tabular-nums; }
+
   /* Bottom tabs */
   nav.tabs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
@@ -203,24 +243,74 @@
 
   <!-- WORKOUT -->
   <section class="tab" id="tab-workout">
-    <form class="card" id="workoutForm" autocomplete="off">
-      <h2>Add exercise</h2>
-      <div class="field">
-        <input id="exName" list="exNames" placeholder="Exercise" required>
-        <datalist id="exNames"></datalist>
-      </div>
-      <div class="row field">
-        <div><label for="exSets">Sets</label><input id="exSets" type="number" inputmode="numeric" min="1" required></div>
-        <div><label for="exReps">Reps</label><input id="exReps" type="number" inputmode="numeric" min="1" required></div>
-        <div><label for="exWeight" id="exWeightLabel">Weight</label><input id="exWeight" type="number" inputmode="decimal" min="0" step="any"></div>
-      </div>
-      <button class="primary" type="submit">Add exercise</button>
-      <p class="hint">Picking an exercise you've done before fills in last time's numbers.</p>
-    </form>
+    <div class="seg tall" id="woSeg">
+      <button data-wo="log">Log</button>
+      <button data-wo="history">Exercises</button>
+    </div>
 
-    <div class="card">
-      <h2>Workout today</h2>
-      <ul class="list" id="workoutList"></ul>
+    <div id="wo-log">
+      <form class="card" id="setForm" autocomplete="off">
+        <h2>Log a set</h2>
+        <div class="field">
+          <input id="exName" list="exNames" placeholder="Exercise (e.g. Hammer curl)" required>
+          <datalist id="exNames"></datalist>
+          <p class="hint" id="exLast"></p>
+        </div>
+        <div class="row field">
+          <div>
+            <label for="setWeight" id="setWeightLabel">Weight</label>
+            <div class="stepper">
+              <button type="button" data-step="weight" data-dir="-1" aria-label="Less weight">−</button>
+              <input id="setWeight" type="number" inputmode="decimal" min="0" step="any" placeholder="0">
+              <button type="button" data-step="weight" data-dir="1" aria-label="More weight">+</button>
+            </div>
+          </div>
+          <div>
+            <label for="setReps">Reps</label>
+            <div class="stepper">
+              <button type="button" data-step="reps" data-dir="-1" aria-label="Fewer reps">−</button>
+              <input id="setReps" type="number" inputmode="numeric" min="1" required>
+              <button type="button" data-step="reps" data-dir="1" aria-label="More reps">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="primary" type="submit" id="logSetBtn">Log set</button>
+        <p class="hint">Weight and reps stay filled in — for 3 sets, just tap Log set 3 times.</p>
+      </form>
+
+      <div class="card">
+        <h2>Workout today</h2>
+        <div id="workoutList"></div>
+      </div>
+    </div>
+
+    <!-- Exercise library: list of all exercises, or one exercise's full history -->
+    <div id="wo-history" hidden>
+      <div id="exBrowse" class="card">
+        <input id="exSearch" type="search" placeholder="Search exercises" autocomplete="off">
+        <ul class="list" id="exList"></ul>
+      </div>
+
+      <div id="exDetail" hidden>
+        <div class="detail-head">
+          <button id="exBack" aria-label="All exercises">‹</button>
+          <h1 id="exTitle"></h1>
+          <button class="link" id="exLogBtn">Log set ›</button>
+        </div>
+        <div class="nudge" id="exNudge" hidden></div>
+        <div class="card">
+          <div class="seg" id="metricSeg">
+            <button data-metric="top">Top weight</button>
+            <button data-metric="volume">Volume</button>
+          </div>
+          <div class="strength-chart" id="strengthWrap"><canvas id="strengthChart" aria-label="Progress chart" role="img"></canvas></div>
+          <p class="hint" id="strengthStat"></p>
+        </div>
+        <div class="card">
+          <h2>Sessions</h2>
+          <ul class="list" id="exSessions"></ul>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -258,18 +348,32 @@
   <button data-tab="settings">Settings</button>
 </nav>
 
+<script src="chart.umd.min.js"></script>
 <script>
 // ---------- Storage ----------
 const KEY = 'fit-tracker-v1';
-const DEFAULTS = { settings: { bmr: 2024, deficit: 440, unit: 'kg' }, days: {}, weights: {} };
+// sets: one entry per logged set — { date, exercise, weight, reps }
+const DEFAULTS = { settings: { bmr: 2024, deficit: 440, unit: 'kg' }, days: {}, weights: {}, sets: [] };
 
 function load() {
   const base = JSON.parse(JSON.stringify(DEFAULTS));
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
-    if (saved) return { ...base, ...saved, settings: { ...base.settings, ...saved.settings } };
+    if (saved) return migrate({ ...base, ...saved, settings: { ...base.settings, ...saved.settings } });
   } catch (e) {}
   return base;
+}
+
+// Older versions stored workouts per day as { exercise, sets, reps, weight }.
+// Expand each into individual sets so all history is structured the same way.
+function migrate(d) {
+  for (const [date, day] of Object.entries(d.days)) {
+    for (const w of day.workouts || []) {
+      for (let i = 0; i < (w.sets || 1); i++) d.sets.push({ date, exercise: w.exercise, weight: w.weight || 0, reps: w.reps });
+    }
+    delete day.workouts;
+  }
+  return d;
 }
 
 function save() {
@@ -278,6 +382,7 @@ function save() {
 }
 
 let data = load();
+save(); // store any migrated data straight away
 
 // ---------- Helpers ----------
 const $ = s => document.querySelector(s);
@@ -300,8 +405,12 @@ let current = todayStr();   // the day being viewed
 let lastToday = current;    // to roll over to the new day if the app stays open past midnight
 let activeTab = 'today';
 let range = 30;             // weight chart range in days, 0 = all
+let woView = 'log';         // workout tab: 'log' or 'history'
+let openEx = null;          // exercise shown in the history detail view (null = list)
+let metric = 'top';         // strength chart: 'top' weight or total 'volume' per session
+let strengthChart = null;   // the current Chart.js instance
 
-const emptyDay = () => ({ burned: 0, food: [], workouts: [] });
+const emptyDay = () => ({ burned: 0, food: [] });
 const getDay = () => data.days[current] || emptyDay();
 function editDay(fn) {
   const d = data.days[current] || (data.days[current] = emptyDay());
@@ -359,19 +468,203 @@ function renderToday() {
 }
 
 function renderWorkout() {
-  const day = getDay();
   const unit = data.settings.unit;
-  $('#exWeightLabel').textContent = `Weight (${unit})`;
-  $('#workoutList').innerHTML = day.workouts.length
-    ? day.workouts.map((w, i) => `
-      <li>
-        <div class="main"><div class="name">${esc(w.exercise)}</div>
-          <div class="sub">${w.sets} × ${w.reps}${w.weight ? ` @ ${fmt1(w.weight)} ${unit}` : ''}</div></div>
-        <button class="del" data-del-workout="${i}" aria-label="Delete">×</button>
-      </li>`).join('')
-    : '<li class="empty">No exercises logged.</li>';
+  $('#setWeightLabel').textContent = `Weight (${unit})`;
 
-  $('#exNames').innerHTML = recentExercises().map(w => `<option value="${esc(w.exercise)}">`).join('');
+  // Today's sets, grouped by exercise in the order they were first logged
+  const groups = new Map();
+  data.sets.forEach((s, i) => {
+    if (s.date !== current) return;
+    const k = exKey(s.exercise);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push({ ...s, i });
+  });
+  $('#workoutList').innerHTML = groups.size
+    ? [...groups.values()].map(sets => `
+      <div class="ex-group">
+        <div class="ex-head">
+          <button class="ex-name" data-pick="${esc(sets[0].exercise)}" title="Log another set">${esc(sets[0].exercise)}</button>
+          <button class="link" data-open="${esc(sets[0].exercise)}">History ›</button>
+        </div>
+        <ul class="list">${sets.map((s, n) => `
+          <li>
+            <span class="setno">${n + 1}</span>
+            <div class="main val">${s.weight ? fmt1(s.weight) + ' ' + unit : 'Bodyweight'} × ${s.reps}</div>
+            <button class="del" data-del-set="${s.i}" aria-label="Delete set">×</button>
+          </li>`).join('')}
+        </ul>
+      </div>`).join('')
+    : '<p class="empty">No sets logged.</p>';
+
+  $('#exNames').innerHTML = exerciseNames().map(n => `<option value="${esc(n)}">`).join('');
+  renderLastHint();
+
+  // Log / Exercises switch (the date bar doesn't apply to the library, so hide it there)
+  document.querySelectorAll('#woSeg button').forEach(b => b.classList.toggle('active', b.dataset.wo === woView));
+  $('#wo-log').hidden = woView !== 'log';
+  $('#wo-history').hidden = woView !== 'history';
+  document.body.classList.toggle('no-date', activeTab === 'workout' && woView === 'history');
+  if (activeTab === 'workout' && woView === 'history') renderExercises();
+}
+
+function renderExercises() {
+  $('#exBrowse').hidden = !!openEx;
+  $('#exDetail').hidden = !openEx;
+  if (!openEx) {
+    const q = exKey($('#exSearch').value);
+    const all = exerciseList();
+    const shown = all.filter(e => exKey(e.name).includes(q));
+    $('#exList').innerHTML = shown.length
+      ? shown.map(e => `
+        <li><button class="row-btn" data-open="${esc(e.name)}">
+          <div class="main"><div class="name">${esc(e.name)}</div>
+            <div class="sub">Last: ${esc(sessionDate(e.last))} · ${e.sessions} session${e.sessions === 1 ? '' : 's'}</div></div>
+          <span class="chev">›</span>
+        </button></li>`).join('')
+      : `<li class="empty">${all.length ? 'No exercises match.' : 'No lifts logged yet.'}</li>`;
+    return;
+  }
+
+  const sessions = sessionsOf(openEx);
+  $('#exTitle').textContent = openEx;
+
+  const nudge = nudgeFor(sessions);
+  $('#exNudge').hidden = !nudge;
+  $('#exNudge').innerHTML = nudge || '';
+
+  renderStrengthChart(sessions);
+
+  $('#exSessions').innerHTML = sessions.length
+    ? sessions.map(s => `
+      <li class="session">
+        <div class="when"><div>${esc(sessionDate(s.date))}</div><div class="sub">${esc(fmtDate(s.date, { weekday: 'short' }))}</div></div>
+        <div class="sets">${formatSets(s.sets).join('<br>')}</div>
+      </li>`).join('')
+    : '<li class="empty">No sessions.</li>';
+}
+
+// ---------- Strength chart (Chart.js, loaded from the local chart.umd.min.js) ----------
+function renderStrengthChart(sessions) {
+  const unit = data.settings.unit;
+  const wrap = $('#strengthWrap'), stat = $('#strengthStat');
+  if (strengthChart) { strengthChart.destroy(); strengthChart = null; }
+
+  // Bodyweight exercises (no weight ever logged) chart reps instead
+  const bodyweight = sessions.every(s => s.sets.every(x => !x.weight));
+  const names = bodyweight ? { top: 'Top reps', volume: 'Total reps' } : { top: 'Top weight', volume: 'Volume' };
+  document.querySelectorAll('#metricSeg button').forEach(b => {
+    b.textContent = names[b.dataset.metric];
+    b.classList.toggle('active', b.dataset.metric === metric);
+  });
+  const suffix = bodyweight ? ' reps' : ' ' + unit;
+  const fmtVal = v => (metric === 'volume' ? fmt(v) : fmt1(v));
+
+  // One point per session, oldest first
+  const pts = sessions.slice().reverse().map(s => ({
+    date: s.date,
+    sets: s.sets,
+    y: metric === 'top'
+      ? Math.max(...s.sets.map(x => (bodyweight ? x.reps : x.weight)))
+      : s.sets.reduce((sum, x) => sum + x.reps * (bodyweight ? 1 : x.weight), 0),
+  }));
+
+  if (typeof Chart === 'undefined' || pts.length < 2) {
+    wrap.hidden = true;
+    stat.textContent = typeof Chart === 'undefined' ? 'Chart file (chart.umd.min.js) is missing.' : 'Log this exercise in 2 or more sessions to see a chart.';
+    return;
+  }
+  wrap.hidden = false;
+
+  // Summary: overall change, and call out a plateau
+  const first = pts[0].y, last = pts[pts.length - 1].y, diff = last - first;
+  let flat = 1;
+  while (flat < pts.length && pts[pts.length - 1 - flat].y === last) flat++;
+  const pct = first ? ` (${diff > 0 ? '+' : '−'}${Math.round(Math.abs(diff) / first * 100)}%)` : '';
+  let text = diff > 0 ? `Up ${fmtVal(diff)}${suffix}${pct}` : diff < 0 ? `Down ${fmtVal(-diff)}${suffix}${pct}` : 'No change';
+  text += ` since ${sessionDate(pts[0].date)}`;
+  if (flat >= 3) text += ` · flat for the last ${flat} sessions`;
+  const anyFlat = pts.some((p, i) => i && p.y === pts[i - 1].y);
+  stat.innerHTML = esc(text) + (anyFlat ? '<br>Dashed grey line = no change from the previous session.' : '');
+
+  const css = getComputedStyle(document.documentElement);
+  const color = name => css.getPropertyValue(name).trim();
+  const isFlat = s => s.p0.parsed.y === s.p1.parsed.y;
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+  strengthChart = new Chart($('#strengthChart'), {
+    type: 'line',
+    data: {
+      labels: pts.map(p => sessionDate(p.date)),
+      datasets: [{
+        data: pts.map(p => p.y),
+        borderColor: color('--accent'),
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointHitRadius: 20,
+        pointBackgroundColor: color('--accent'),
+        pointBorderColor: color('--surface'),
+        pointBorderWidth: 2,
+        // Flat stretches (same as the previous session) are drawn dashed and grey so plateaus stand out
+        segment: {
+          borderColor: s => (isFlat(s) ? color('--muted') : undefined),
+          borderDash: s => (isFlat(s) ? [6, 4] : undefined),
+        },
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      layout: { padding: { top: 8, right: 8 } },
+      scales: {
+        x: { grid: { display: false }, border: { color: color('--border') }, ticks: { color: color('--muted'), maxTicksLimit: 5, maxRotation: 0 } },
+        y: { grace: '10%', grid: { color: color('--border') }, border: { display: false }, ticks: { color: color('--muted'), maxTicksLimit: 5, callback: fmtVal } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: color('--surface-2'),
+          borderColor: color('--border'),
+          borderWidth: 1,
+          titleColor: color('--text'),
+          bodyColor: color('--text-2'),
+          displayColors: false,
+          padding: 10,
+          callbacks: {
+            title: items => fmtDate(pts[items[0].dataIndex].date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }),
+            label: item => `${names[metric]}: ${fmtVal(item.parsed.y)}${suffix}`,
+            afterBody: items => formatSets(pts[items[0].dataIndex].sets),
+          },
+        },
+      },
+    },
+  });
+}
+
+// "12 Oct", plus the year if it isn't this year
+function sessionDate(d) {
+  const sameYear = d.slice(0, 4) === todayStr().slice(0, 4);
+  return fmtDate(d, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Same top weight for 3+ sessions in a row (most recent first) → suggest a small jump
+function nudgeFor(sessions) {
+  const unit = data.settings.unit;
+  const tops = sessions.map(s => Math.max(...s.sets.map(x => x.weight)));
+  if (!tops[0]) return null; // no sessions, or bodyweight
+  let n = 1;
+  while (n < tops.length && tops[n] === tops[0]) n++;
+  if (n < 3) return null;
+  const next = Math.round((tops[0] + increment(tops[0])) * 100) / 100;
+  return `↑ You've done ${fmt1(tops[0])} ${unit} for ${n} sessions — consider trying <b>${fmt1(next)} ${unit}</b>.`;
+}
+
+function renderLastHint() {
+  const name = $('#exName').value;
+  const prev = name.trim() && sessionsOf(name).find(s => s.date < current);
+  $('#exLast').textContent = prev ? `Last time (${fmtDate(prev.date)}): ${formatSets(prev.sets).join(', ')}` : '';
 }
 
 function renderWeight() {
@@ -408,20 +701,75 @@ function renderSettings() {
   }
 }
 
-// Most recent entry per unique name, newest first (used for autocomplete + autofill)
-function recentUnique(listKey, nameKey) {
+// Most recent entry per unique food name, newest first (used for autocomplete + autofill)
+function recentFoods() {
   const seen = new Map();
   for (const d of Object.keys(data.days).sort().reverse()) {
-    const items = data.days[d][listKey];
+    const items = data.days[d].food;
     for (let i = items.length - 1; i >= 0; i--) {
-      const k = items[i][nameKey].toLowerCase();
+      const k = items[i].name.toLowerCase();
       if (!seen.has(k)) seen.set(k, items[i]);
     }
   }
   return [...seen.values()];
 }
-const recentFoods = () => recentUnique('food', 'name');
-const recentExercises = () => recentUnique('workouts', 'exercise');
+
+// ---------- Exercises ----------
+// Names match ignoring case and extra spaces, so "hammer curl" and "Hammer Curl" are one exercise
+const exKey = name => name.trim().replace(/\s+/g, ' ').toLowerCase();
+
+// Use the spelling already in the log if this exercise exists, otherwise tidy what was typed
+function canonicalName(name) {
+  const hit = data.sets.find(s => exKey(s.exercise) === exKey(name));
+  return hit ? hit.exercise : name.trim().replace(/\s+/g, ' ');
+}
+
+// Every exercise ever logged, most recently done first: [{ name, last, sessions }]
+function exerciseList() {
+  const map = new Map();
+  for (const s of data.sets) {
+    const k = exKey(s.exercise);
+    const e = map.get(k) || map.set(k, { name: s.exercise, last: s.date, dates: new Set() }).get(k);
+    if (s.date > e.last) e.last = s.date;
+    e.dates.add(s.date);
+  }
+  return [...map.values()]
+    .map(e => ({ name: e.name, last: e.last, sessions: e.dates.size }))
+    .sort((a, b) => b.last.localeCompare(a.last));
+}
+const exerciseNames = () => exerciseList().map(e => e.name);
+
+// All sessions (one per date) for an exercise, newest first: [{ date, sets: [...] }]
+function sessionsOf(name) {
+  const k = exKey(name), byDate = {};
+  for (const s of data.sets) if (exKey(s.exercise) === k) (byDate[s.date] ||= []).push(s);
+  return Object.keys(byDate).sort().reverse().map(date => ({ date, sets: byDate[date] }));
+}
+
+// Most recent set of an exercise on or before the viewed day (to prefill the form)
+function lastSetOf(name) {
+  const k = exKey(name);
+  let last = null;
+  for (const s of data.sets) if (exKey(s.exercise) === k && s.date <= current && (!last || s.date >= last.date)) last = s;
+  return last;
+}
+
+// Group runs of identical sets: 20×12, 20×12, 22×10 → ["2×12 @ 20 kg", "1×10 @ 22 kg"]
+function formatSets(sets) {
+  const unit = data.settings.unit, runs = [];
+  for (const s of sets) {
+    const r = runs[runs.length - 1];
+    if (r && r.weight === s.weight && r.reps === s.reps) r.n++;
+    else runs.push({ weight: s.weight, reps: s.reps, n: 1 });
+  }
+  return runs.map(r => `${r.n}×${r.reps}` + (r.weight ? ` @ ${fmt1(r.weight)} ${unit}` : ''));
+}
+
+// A sensible small jump up from a given weight (used by the +/− buttons)
+function increment(w) {
+  if (data.settings.unit === 'lb') return w < 25 ? 2.5 : 5;
+  return w < 10 ? 1 : w < 40 ? 2 : w < 100 ? 2.5 : 5;
+}
 
 // ---------- Weight chart ----------
 function niceStep(raw) {
@@ -533,24 +881,72 @@ $('#foodForm').addEventListener('submit', e => {
   $('#foodName').focus();
 });
 
-$('#exName').addEventListener('input', e => {
-  const match = recentExercises().find(w => w.exercise.toLowerCase() === e.target.value.trim().toLowerCase());
-  if (match) { $('#exSets').value = match.sets; $('#exReps').value = match.reps; $('#exWeight').value = match.weight || ''; }
+// Choosing a known exercise fills in the weight and reps from the last set you did
+$('#exName').addEventListener('input', () => {
+  const last = lastSetOf($('#exName').value);
+  if (last) { $('#setWeight').value = last.weight || ''; $('#setReps').value = last.reps; }
+  renderLastHint();
 });
 
-$('#workoutForm').addEventListener('submit', e => {
+// +/− buttons: reps go up by 1, weight by a sensible plate/dumbbell jump
+document.querySelectorAll('[data-step]').forEach(b => b.onclick = () => {
+  const dir = Number(b.dataset.dir);
+  if (b.dataset.step === 'reps') {
+    $('#setReps').value = Math.max(1, (num($('#setReps').value) || 0) + dir);
+  } else {
+    const w = num($('#setWeight').value) || 0;
+    const next = dir > 0 ? w + increment(w) : w - increment(w - 0.01);
+    $('#setWeight').value = Math.max(0, Math.round(next * 100) / 100);
+  }
+});
+
+$('#setForm').addEventListener('submit', e => {
   e.preventDefault();
-  const entry = {
-    exercise: $('#exName').value.trim(),
-    sets: num($('#exSets').value),
-    reps: num($('#exReps').value),
-    weight: num($('#exWeight').value) || 0,
-  };
-  if (!entry.exercise || !entry.sets || !entry.reps) return;
-  editDay(d => d.workouts.push(entry));
-  // Keep sets/reps/weight so the next exercise is quick to log; clear the name
-  $('#exName').value = '';
-  $('#exName').focus();
+  const name = $('#exName').value;
+  const reps = Math.round(num($('#setReps').value));
+  const weight = num($('#setWeight').value) || 0;
+  if (!name.trim() || !(reps >= 1) || weight < 0) return;
+  const exercise = canonicalName(name);
+  data.sets.push({ date: current, exercise, weight, reps });
+  save();
+  render();
+  // Keep weight/reps filled in for the next set; confirm with a quick flash on the button
+  const n = data.sets.filter(s => s.date === current && exKey(s.exercise) === exKey(exercise)).length;
+  const btn = $('#logSetBtn');
+  btn.textContent = `Set ${n} logged ✓`;
+  clearTimeout(btn.timer);
+  btn.timer = setTimeout(() => { btn.textContent = 'Log set'; }, 1200);
+});
+
+// Exercise library navigation
+function showWorkout(view, ex = openEx) {
+  woView = view;
+  openEx = ex;
+  render();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#woSeg button').forEach(b => b.onclick = () => showWorkout(b.dataset.wo, null));
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-open]');
+  if (b) showWorkout('history', b.dataset.open);
+});
+$('#exBack').onclick = () => showWorkout('history', null);
+$('#exSearch').addEventListener('input', renderExercises);
+document.querySelectorAll('#metricSeg button').forEach(b => b.onclick = () => { metric = b.dataset.metric; renderExercises(); });
+$('#exLogBtn').onclick = () => {
+  const name = openEx;
+  showWorkout('log', null);
+  $('#exName').value = name;
+  $('#exName').dispatchEvent(new Event('input'));
+};
+
+// Tapping an exercise name in today's list loads it into the form to add another set
+$('#workoutList').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]');
+  if (!b) return;
+  $('#exName').value = b.dataset.pick;
+  $('#exName').dispatchEvent(new Event('input'));
+  $('#setForm').scrollIntoView({ behavior: 'smooth' });
 });
 
 $('#weightForm').addEventListener('submit', e => {
@@ -567,10 +963,10 @@ document.querySelectorAll('#rangeSeg button').forEach(b => b.onclick = () => { r
 
 // Delete buttons (event delegation)
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-del-food],[data-del-workout],[data-del-weight]');
+  const t = e.target.closest('[data-del-food],[data-del-set],[data-del-weight]');
   if (!t || !confirm('Delete this entry?')) return;
   if (t.dataset.delFood !== undefined) editDay(d => d.food.splice(Number(t.dataset.delFood), 1));
-  else if (t.dataset.delWorkout !== undefined) editDay(d => d.workouts.splice(Number(t.dataset.delWorkout), 1));
+  else if (t.dataset.delSet !== undefined) { data.sets.splice(Number(t.dataset.delSet), 1); save(); render(); }
   else { delete data.weights[t.dataset.delWeight]; save(); render(); }
 });
 

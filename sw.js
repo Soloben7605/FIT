@@ -2,11 +2,14 @@
 // Strategy: serve from cache instantly, then quietly fetch a fresh copy in the
 // background for next time (so updates show up on the second open after you upload).
 
-const CACHE = 'fit-v1';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
+// Bump the version number whenever you add or rename a file in FILES.
+const CACHE = 'fit-v2';
+const FILES = ['./', './index.html', './chart.umd.min.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's own cache so we always store the latest upload
+  const requests = FILES.map(f => new Request(f, { cache: 'reload' }));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(requests)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
